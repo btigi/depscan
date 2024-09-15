@@ -26,6 +26,8 @@ if (!Directory.Exists(args[0]))
 var extension = "csproj";
 var searchTest = @"<ProjectReference Include=""";
 var searchResults = SearchContentListInFiles(args[0], extension, searchTest);
+var colours = new Dictionary<string, string>();
+var random = new Random();
 
 var builder = new DgmlBuilder();
 
@@ -33,7 +35,7 @@ foreach (var searchResult in searchResults)
 {
     var id = Path.GetFileName(searchResult.file);
     var projectName = Path.GetFileNameWithoutExtension(searchResult.file);
-    builder.Nodes.Add(new Node(id, projectName));
+    builder.Nodes.Add(new Node(id, projectName, GetColour(colours, random, searchResult.file)));
 
     var dependency = Path.GetFileName(searchResult.content.Replace("<ProjectReference Include=\"", "").Replace("/>", "").Replace("\"", "").Trim());
     if (!String.IsNullOrEmpty(dependency))
@@ -70,4 +72,42 @@ static IEnumerable<(string file, int lineNumber, string content)> SearchContentL
     });
 
     return result;
+}
+
+static string GetColour(Dictionary<string, string> colours, Random random, string directory)
+{
+    if (String.IsNullOrEmpty(directory) || Path.GetPathRoot(directory) == directory)
+    {
+        return string.Empty;
+    }
+
+    var baseDirectory = Path.GetDirectoryName(directory);
+    if (String.IsNullOrEmpty(baseDirectory))
+    {
+        return string.Empty;
+    }
+
+    baseDirectory = $@"{Path.TrimEndingDirectorySeparator(baseDirectory)}{Path.DirectorySeparatorChar}";
+
+    if (Directory.Exists($"{baseDirectory}\\.git"))
+    {
+        if (colours.TryGetValue(baseDirectory, out var colour))
+        {
+            return colour;
+        }
+
+        const int MaxColour = 150; // Don't go all the way to 255 to avoid generating light grey colours, which make the default white text illegible
+        colour = $"{random.Next(MaxColour):X}{random.Next(MaxColour):X}{random.Next(MaxColour):X}";
+        colours.Add(baseDirectory, colour);
+        return colour;
+    }
+    else
+    {
+        var parentPath = Path.GetDirectoryName(Path.GetDirectoryName(baseDirectory));
+        if (String.IsNullOrEmpty(parentPath))
+        {
+            return string.Empty;
+        }
+        return GetColour(colours, random, parentPath);
+    }
 }

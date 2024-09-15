@@ -38,6 +38,10 @@ namespace Dgml
                 writer.WriteStartElement("Node");
                 writer.WriteAttributeString("Id", node.Id);
                 writer.WriteAttributeString("Label", node.Name);
+                if (!String.IsNullOrEmpty(node.Colour))
+                {
+                    writer.WriteAttributeString("Background", $"#{node.Colour}");
+                }
                 writer.WriteEndElement();
             }
         }
