@@ -35,7 +35,10 @@ foreach (var searchResult in searchResults)
 {
     var id = Path.GetFileName(searchResult.file);
     var projectName = Path.GetFileNameWithoutExtension(searchResult.file);
-    builder.Nodes.Add(new Node(id, projectName, GetColour(colours, random, searchResult.file)));
+    if (!builder.Nodes.Any(a => a.Id == id))
+    {
+        builder.Nodes.Add(new Node(id, projectName, GetColour(colours, random, searchResult.file)));
+    }
 
     var dependency = Path.GetFileName(searchResult.content.Replace("<ProjectReference Include=\"", "").Replace("/>", "").Replace("\"", "").Trim());
     if (!String.IsNullOrEmpty(dependency))
@@ -97,17 +100,18 @@ static string GetColour(Dictionary<string, string> colours, Random random, strin
         }
 
         const int MaxColour = 150; // Don't go all the way to 255 to avoid generating light grey colours, which make the default white text illegible
-        colour = $"{random.Next(MaxColour):X}{random.Next(MaxColour):X}{random.Next(MaxColour):X}";
+        colour = $"{random.Next(MaxColour):X2}{random.Next(MaxColour):X2}{random.Next(MaxColour):X2}";
         colours.Add(baseDirectory, colour);
         return colour;
     }
     else
     {
-        var parentPath = Path.GetDirectoryName(Path.GetDirectoryName(baseDirectory));
+        var parentPath = Path.GetDirectoryName(baseDirectory);
         if (String.IsNullOrEmpty(parentPath))
         {
             return string.Empty;
         }
-        return GetColour(colours, random, parentPath);
+        var colour = GetColour(colours, random, parentPath);
+        return colour;
     }
 }
